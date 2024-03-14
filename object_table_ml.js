@@ -26,10 +26,9 @@ const obj_table_ml = (source_func, target_table, status_column, {
         type: "incremental",
         uniqueKey: [unique_key]
     }).query(
-        (ctx) => `${source_func(ctx)} 
+        (ctx) => `${source_func(ctx)} WHERE ${status_column} NOT LIKE 'A retryable error occurred:%' 
             ${ctx.when(ctx.incremental(), 
-                `WHERE (${unique_key} NOT IN (SELECT ${unique_key} FROM ${ctx.resolve(target_table)}) OR ${updated_column} > (SELECT max(${updated_column}) FROM ${ctx.resolve(target_table)}))`)} 
-            AND ${status_column} NOT LIKE 'A retryable error occurred:%' 
+                `AND (${unique_key} NOT IN (SELECT ${unique_key} FROM ${ctx.resolve(target_table)}) OR ${updated_column} > (SELECT max(${updated_column}) FROM ${ctx.resolve(target_table)}))`)} 
             LIMIT ${batch_size}`);
 };
 
