@@ -9,5 +9,5 @@ bqml.transcribe(obj_table, target_table, model, {
     "model": "telephony",
     "auto_decoding_config": {}
 }, {
-    bacth_size: 2
+    batch_size: 2
 });
