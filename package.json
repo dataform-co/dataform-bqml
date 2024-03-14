@@ -1,0 +1,6 @@
+{
+  "name": "sample",
+  "dependencies": {
+    "@dataform/core": "2.8.3"
+  }
+}

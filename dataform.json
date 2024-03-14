@@ -1,0 +1,8 @@
+{
+  "defaultSchema": "sample",
+  "assertionSchema": "sample",
+  "warehouse": "bigquery",
+  "defaultDatabase": "cdap-trex",
+  "defaultLocation": "us"
+}
+    
