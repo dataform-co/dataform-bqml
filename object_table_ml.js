@@ -1,3 +1,6 @@
+/**
+ * Declare the given source a resolvable Dataform data source. 
+ */
 const declare_resolvable = (source) => {
     if (source.constructor === Object) {
         declare(source);
@@ -9,28 +12,25 @@ const declare_resolvable = (source) => {
 /**
  * A generic object table ML pipeline. 
  * It incrementally performs ML operation on rows from the source table and merge to the target table.
+ * 
+ * @param {Function} source_func a Contextable function to produce the query on the source data
+ * @param {String} target_table the name of the table to store the final result
+ * @param {status_column} 
  */
 const obj_table_ml = (source_func, target_table, status_column, {
     unique_key = "uri",
     updated_column = "updated",
     batch_size = 10000,
 } = {}) => {
-    let intermediate_table = `intermediate_${target_table}`;
-    publish(intermediate_table, {
+    publish(target_table, {
         type: "incremental",
         uniqueKey: [unique_key]
     }).query(
         (ctx) => `${source_func(ctx)} 
             ${ctx.when(ctx.incremental(), 
-                `WHERE ${unique_key} NOT IN (SELECT ${unique_key} FROM ${ctx.resolve(target_table)}) OR ${updated_column} > (SELECT max(${updated_column}) FROM ${ctx.resolve(target_table)})`)} 
+                `WHERE (${unique_key} NOT IN (SELECT ${unique_key} FROM ${ctx.resolve(target_table)}) OR ${updated_column} > (SELECT max(${updated_column}) FROM ${ctx.resolve(target_table)}))`)} 
+            AND ${status_column} NOT LIKE 'A retryable error occurred:%' 
             LIMIT ${batch_size}`);
-
-    publish(target_table, {
-        type: "incremental",
-        uniqueKey: [unique_key]
-    }).query(
-        (ctx) => `SELECT * FROM ${ctx.ref(intermediate_table)} WHERE ${status_column} NOT LIKE 'A retryable error occurred:'`
-    ).postOps((ctx) => `TRUNCATE TABLE ${ctx.ref(intermediate_table)}`);
 };
 
 const annotate_image = (source_table, target_table, model, features, options = {}) => {
