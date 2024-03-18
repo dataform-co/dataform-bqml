@@ -11,21 +11,25 @@ const declare_resolvable = (source) => {
 
 /**
  * A generic object table ML pipeline. 
- * It incrementally performs ML operation on rows from the source table and merge to the target table.
+ * It incrementally performs ML operation on rows from the source table and merge to the target table until
+ * no new row is detected or ran longer than the specific duration.
  * 
  * @param {Function} source_func a Contextable function to produce the query on the source data
  * @param {String} target_table the name of the table to store the final result
  * @param {String} status_column name of column that carries the ML operation status
+ * @param {Number} batch_size number of rows to process in each SQL job. A negative value means unlimited.
+ *                 If the batch size is non-negative, the rows will be processed in batches according to the
+ *                 batch size, with each batch has a 6 hours of timeout.
  * @param {String} unique_key the primary key in the target table for incremental update, default value is "uri"
  * @param {String} updated_column the column that carries the last updated timestamp of an object in the object table
- * @param {Number} batch_size number of objects to process in each SQL job. A negative value means unlimited, which is the default value.
- * @param {Number} termination_time_secs 
+ * @param {Number} batch_duration_secs if batch size is non-negative, this represents the number of seconds to pass
+ *                 before breaking the batching loop if it hasn't been finished before within this duration.
  */
 const obj_table_ml = (source_func, target_table, status_column, {
+    batch_size,
     unique_key = "uri",
     updated_column = "updated",
-    batch_size = -1,
-    termination_time_secs = 12 * 60 * 60,
+    batch_duration_secs = 12 * 60 * 60,
 } = {}) => {
     operate(`init_${target_table}`)
     .queries((ctx) => 
@@ -48,7 +52,7 @@ const obj_table_ml = (source_func, target_table, status_column, {
             ${batch_size >= 0 ? `LIMIT ${batch_size}` : ''}`);
     if (batch_size >= 0) {
         table.postOps((ctx) => `${ctx.when(ctx.incremental(), 
-        `UNTIL (SELECT @@row_count) = 0 OR TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), @@script.creation_time, SECOND) >= ${termination_time_secs}
+        `UNTIL (SELECT @@row_count) = 0 OR TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), @@script.creation_time, SECOND) >= ${batch_duration_secs}
          END REPEAT`, ``)}`
         );
     }
