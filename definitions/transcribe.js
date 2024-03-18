@@ -8,6 +8,4 @@ bqml.transcribe(obj_table, target_table, model, {
     "language_codes": ["en-US"],
     "model": "telephony",
     "auto_decoding_config": {}
-}, {
-    batch_size: 2
 });
