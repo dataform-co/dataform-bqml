@@ -1,6 +1,6 @@
 {
-  "name": "sample",
+  "name": "bqml",
   "dependencies": {
-    "@dataform/core": "2.8.3"
+    "@dataform/core": "2.9.0"
   }
 }
