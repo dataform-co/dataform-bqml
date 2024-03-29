@@ -1,13 +1,4 @@
-/**
- * Declare the given source a resolvable Dataform data source. 
- */
-const declare_resolvable = (source) => {
-    if (source.constructor === Object) {
-        declare(source);
-    } else {
-        declare({name: source});
-    }
-};
+const common = require("./common.js");
 
 /**
  * A generic object table ML pipeline. 
@@ -54,8 +45,8 @@ const obj_table_ml = (source_table, source, target_table, accept_filter, {
         ${ctx.when(ctx.incremental(), 
             `DECLARE candidates ARRAY<STRING>;
              REPEAT
-                SET candidates = ARRAY(SELECT ${unique_key} FROM ${ctx.resolve(source_table)} 
-                    WHERE ${unique_key} NOT IN (SELECT ${unique_key} FROM ${ctx.resolve(target_table)})
+                SET candidates = ARRAY(SELECT ${unique_key} FROM ${ctx.resolve(source_table)} AS S
+                    WHERE NOT EXISTS (SELECT * FROM ${ctx.resolve(target_table)} AS T WHERE S.${unique_key} = T.${unique_key})
                         OR ${updated_column} > (SELECT max(${updated_column}) FROM ${ctx.resolve(target_table)}) ${limit_clause})`,
             ``)}`);
       where_clause = `${unique_key} IN UNNEST(candidates) AND ${accept_filter}`;
@@ -77,46 +68,46 @@ const obj_table_ml = (source_table, source, target_table, accept_filter, {
 
 const annotate_image = (source_table, target_table, model, features, options = {}) => {
     let feature_names = features.map((f) => `'${f}'`).join(", ");
-    declare_resolvable(source_table);
-    declare_resolvable(model);
+    common.declare_resolvable(source_table);
+    common.declare_resolvable(model);
     obj_table_ml(source_table, (ctx) => `SELECT * FROM ML.ANNOTATE_IMAGE(
         MODEL ${ctx.resolve(model)},
         TABLE ${ctx.resolve(source_table)},
         STRUCT([${feature_names}] AS vision_features))`, 
-        target_table, "ml_annotate_image_status NOT LIKE 'A retryable error occurred:%'", options);
+        target_table, common.retryable_error_filter("ml_annotate_image_status"), options);
 };
 
 const transcribe = (source_table, target_table, model, recognition_config, options = {}) => {
     let config = JSON.stringify(recognition_config);
-    declare_resolvable(source_table);
-    declare_resolvable(model);
+    common.declare_resolvable(source_table);
+    common.declare_resolvable(model);
     obj_table_ml(source_table, (ctx) => `SELECT * FROM ML.TRANSCRIBE(
         MODEL ${ctx.resolve(model)},
         TABLE ${ctx.resolve(source_table)},
         recognition_config => ( JSON '${config}'))`, 
-        target_table, "ml_transcribe_status NOT LIKE 'A retryable error occurred:%'", options);
+        target_table, common.retryable_error_filter("ml_transcribe_status"), options);
 };
 
 const process_document = (source_table, target_table, model, options = {}) => {
-    declare_resolvable(source_table);
-    declare_resolvable(model);
+    common.declare_resolvable(source_table);
+    common.declare_resolvable(model);
     obj_table_ml(source_table, (ctx) => `SELECT * FROM ML.PROCESS_DOCUMENT(
         MODEL ${ctx.resolve(model)},
         TABLE ${ctx.resolve(source_table)})`, 
-        target_table, "ml_process_document_status NOT LIKE 'A retryable error occurred:%'", options);
+        target_table, common.retryable_error_filter("ml_process_document_status"), options);
 };
 
 const vision_generate_text = (source_table, target_table, model, prompt, call_config = {}, options = {}) => {
     let config = {prompt: prompt, ...call_config};
-    declare_resolvable(source_table);
-    declare_resolvable(model);
+    common.declare_resolvable(source_table);
+    common.declare_resolvable(model);
     obj_table_ml(source_table, (ctx) => `SELECT * FROM ML.GENERATE_TEXT(
         MODEL ${ctx.resolve(model)},
         TABLE ${ctx.resolve(source_table)},
         STRUCT(
             ${Object.entries(config).map(([k, v]) => `${JSON.stringify(v)} AS ${k}`).join(",")}
         ))`, 
-        target_table, "ml_generate_text_status NOT LIKE 'A retryable error occurred:%'", options);
+        target_table, common.retryable_error_filter("ml_generate_text_status"), options);
 }
 
 module.exports = {
