@@ -11,7 +11,8 @@ const common = require("./common.js");
  * @param {String} ml_function the name of the BQML function to call
  * @param {Resolvable} ml_model the remote model to use for the ML operation
  * @param {String | Function} source_query either a query string or a Contextable function to produce the 
- *                            query on the source data for the ML operation
+ *                            query on the source data for the ML operation and it must have the unique key 
+ *                            columns selected in addition to other fields
  * @param {String} accept_filter a SQL boolean expression for accepting a row to the target table after
  *                 the ML operation
  * @param {Object} ml_configs configurations for the ML operation
@@ -71,7 +72,8 @@ const table_ml = (target_table, unique_keys, ml_function, ml_model, source_query
  * @param {Resolvable} ml_model the remote model to use for the ML operation that uses one of the 
  *                     `textembedding-gecko*` Vertex AI LLMs as endpoint
  * @param {String | Function} source_query either a query string or a Contextable function to produce the 
- *                            query on the source data for the ML operation
+ *                            query on the source data for the ML operation and it must have the unique key 
+ *                            columns selected in addition to other fields
  * @param {Object} ml_configs configurations for the ML operation
  * @param {Object} options the configuration object for the {@link table_ml} function
  * 
@@ -94,7 +96,8 @@ const generate_embedding = (source_table, target_table, unique_keys, ml_model, s
  * @param {Resolvable} ml_model the remote model to use for the ML operation that uses one 
  *                     of the Vertex AI LLM endpoints
  * @param {String | Function} source_query either a query string or a Contextable function to produce the 
- *                            query on the source data for the ML operation
+ *                            query on the source data for the ML operation and it must have the unique key 
+ *                            columns selected in addition to other fields
  * @param {Object} ml_configs configurations for the ML operation
  * @param {Object} options the configuration object for the {@link table_ml} function
  * 
@@ -116,7 +119,8 @@ const generate_text = (source_table, target_table, unique_keys, ml_model, source
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {Resolvable} ml_model the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_NATURAL_LANGUAGE_V1
  * @param {String | Function} source_query either a query string or a Contextable function to produce the 
- *                            query on the source data for the ML operation
+ *                            query on the source data for the ML operation and it must have the unique key 
+ *                            columns selected in addition to other fields
  * @param {Object} ml_configs configurations for the ML operation
  * @param {Object} options the configuration object for the {@link table_ml} function
  * 
@@ -138,7 +142,8 @@ const understand_text = (source_table, target_table, unique_keys, ml_model, sour
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {Resolvable} ml_model the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_TRANSLATE_V3
  * @param {String | Function} source_query either a query string or a Contextable function to produce the 
- *                            query on the source data for the ML operation
+ *                            query on the source data for the ML operation and it must have the unique key 
+ *                            columns selected in addition to other fields
  * @param {Object} ml_configs configurations for the ML operation
  * @param {Object} options the configuration object for the {@link table_ml} function
  * 

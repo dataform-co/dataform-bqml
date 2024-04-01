@@ -55,7 +55,7 @@ Performs the ML.GENERATE_TEXT function on the given source table.
 | target_table | <code>String</code> | the name of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model to use for the ML operation that uses one of the Vertex AI LLM endpoints |
-| source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation |
+| source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation and it must have the unique key columns selected in addition to other fields |
 | ml_configs | <code>Object</code> | configurations for the ML operation |
 | options | <code>Object</code> | the configuration object for the [table_ml](#table_ml) function |
 
@@ -99,7 +99,7 @@ Performs the ML.GENERATE_EMBEDDING function on the given source table.
 | target_table | <code>String</code> | the name of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model to use for the ML operation that uses one of the `textembedding-gecko*` Vertex AI LLMs as endpoint |
-| source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation |
+| source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation and it must have the unique key columns selected in addition to other fields |
 | ml_configs | <code>Object</code> | configurations for the ML operation |
 | options | <code>Object</code> | the configuration object for the [table_ml](#table_ml) function |
 
@@ -122,7 +122,7 @@ Performs the ML.UNDERSTAND_TEXT function on the given source table.
 | target_table | <code>String</code> | the name of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_NATURAL_LANGUAGE_V1 |
-| source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation |
+| source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation and it must have the unique key columns selected in addition to other fields |
 | ml_configs | <code>Object</code> | configurations for the ML operation |
 | options | <code>Object</code> | the configuration object for the [table_ml](#table_ml) function |
 
@@ -145,7 +145,7 @@ Performs the ML.TRANSLATE function on the given source table.
 | target_table | <code>String</code> | the name of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_TRANSLATE_V3 |
-| source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation |
+| source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation and it must have the unique key columns selected in addition to other fields |
 | ml_configs | <code>Object</code> | configurations for the ML operation |
 | options | <code>Object</code> | the configuration object for the [table_ml](#table_ml) function |
 
@@ -232,7 +232,7 @@ than the specific duration.
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_function | <code>String</code> | the name of the BQML function to call |
 | ml_model | <code>Resolvable</code> | the remote model to use for the ML operation |
-| source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation |
+| source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation and it must have the unique key columns selected in addition to other fields |
 | accept_filter | <code>String</code> | a SQL boolean expression for accepting a row to the target table after the ML operation |
 | ml_configs | <code>Object</code> | configurations for the ML operation |
 | batch_size | <code>Number</code> | number of rows to process in each SQL job. Rows in the object table will be processed in batches according to the batch size. Default batch size is 10000 |
