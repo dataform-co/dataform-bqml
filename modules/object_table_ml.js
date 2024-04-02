@@ -2,7 +2,7 @@ const common = require("./common.js");
 
 /**
  * A generic object table ML pipeline. 
- * It incrementally performs ML operation on new rows from the source table 
+ * It incrementally performs an ML operation on new rows from the source table 
  * and merges to the target table until no new row is detected or runs longer 
  * than the specific duration.
  * A row from the source table is considered as new if the `unique_key` (default to "uri") 

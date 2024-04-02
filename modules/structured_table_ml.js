@@ -2,7 +2,7 @@ const common = require("./common.js");
 
 /**
  * A generic structured table ML pipeline.
- * It incrementally performs ML operation on rows from the source table 
+ * It incrementally performs an ML operation on rows from the source table 
  * and merges to the target table until all rows are processed or runs longer 
  * than the specific duration.
  * 
