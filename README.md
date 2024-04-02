@@ -4,13 +4,13 @@ on both structured and unstructured data. When using remote inference, the user 
 attention to [quotas and limits](https://cloud.google.com/bigquery/quotas#cloud_ai_service_functions), 
 which can result in retryable error in a subset of rows and require reprocessing.
 
-The BQML dataform library is to assist users to create BQML pipelines that are resilient to 
+The BQML dataform library assists users to create BQML pipelines that are resilient to 
 transient failures by automatic reprocessing and incrementally updating the target table.
 
 ## Quick Start Guide
 ### Installation
 Add the bqml package to your package.json file in your Dataform project. 
-You can find the most up to package version on the releases page.
+You can find the most up to date package version on the releases page.
 
 ### Usage
 The following example shows how to generate text from images using the
@@ -69,7 +69,7 @@ function vision_generate_text(
 #### Description
 Performs the ML.GENERATE_TEXT function on visual content in the given source table.
 
-**See**: {@link https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-generate-text#gemini-pro-vision
+**See**: [https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-generate-text#gemini-pro-vision](https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-generate-text#gemini-pro-vision)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -199,7 +199,7 @@ function process_document(
 #### Description
 Performs the ML.PROCESS_DOCUMENT function on the given source table.
 
-**See**: {@link https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-process-document
+**See**: [https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-process-document](https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-process-document)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -222,7 +222,7 @@ function table_ml(
 ```
 #### Description
 A generic structured table ML pipeline.
-It incrementally performs ML operation on rows from the source table
+It incrementally performs an ML operation on rows from the source table
 and merges to the target table until all rows are processed or runs longer
 than the specific duration.
 
@@ -253,7 +253,7 @@ function obj_table_ml(
 ```
 #### Description
 A generic object table ML pipeline.
-It incrementally performs ML operation on new rows from the source table
+It incrementally performs an ML operation on new rows from the source table
 and merges to the target table until no new row is detected or runs longer
 than the specific duration.
 A row from the source table is considered as new if the `unique_key` (default to "uri")
