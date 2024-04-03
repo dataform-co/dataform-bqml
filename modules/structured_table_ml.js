@@ -1,19 +1,19 @@
-const common = require("./common.js");
+const common = require("./utils.js");
 
 /**
  * A generic structured table ML pipeline.
  * It incrementally performs an ML operation on rows from the source table 
- * and merges to the target table until all rows are processed or runs longer 
+ * and merges to the output table until all rows are processed or runs longer 
  * than the specific duration.
  * 
- * @param {String} target_table name of the target table
+ * @param {String} output_table name of the output table
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {String} ml_function the name of the BQML function to call
  * @param {Resolvable} ml_model the remote model to use for the ML operation
  * @param {String | Function} source_query either a query string or a Contextable function to produce the 
  *                            query on the source data for the ML operation and it must have the unique key 
  *                            columns selected in addition to other fields
- * @param {String} accept_filter a SQL boolean expression for accepting a row to the target table after
+ * @param {String} accept_filter a SQL boolean expression for accepting a row to the output table after
  *                 the ML operation
  * @param {Object} ml_configs configurations for the ML operation
  * @param {Number} batch_size number of rows to process in each SQL job. Rows in the object table will be 
@@ -21,33 +21,33 @@ const common = require("./common.js");
  * @param {Number} batch_duration_secs the number of seconds to pass before breaking the batching loop if it 
  *                 hasn't been finished before within this duration. Default value is 22 hours
  */
-const table_ml = (target_table, unique_keys, ml_function, ml_model, source_query, accept_filter, ml_configs = {}, {
+function table_ml(output_table, unique_keys, ml_function, ml_model, source_query, accept_filter, ml_configs = {}, {
     batch_size = 10000,
     batch_duration_secs = 22 * 60 * 60
-} = {}) => {
+} = {}) {
     let source_func = (source_query instanceof Function) ? source_query : () => source_query;
     let limit_clause = `LIMIT ${batch_size}`;
     let ml_configs_string = Object.entries(ml_configs).map(([k, v]) => `${JSON.stringify(v)} AS ${k}`).join(',');
 
     unique_keys = (unique_keys instanceof Array ? unique_keys : [unique_keys]);
 
-    // Initialize by creating the target table.
-    operate(`init_${target_table}`)
-        .queries((ctx) => `CREATE TABLE IF NOT EXISTS ${ctx.resolve(target_table)} AS 
+    // Initialize by creating the output table.
+    operate(`init_${output_table}`)
+        .queries((ctx) => `CREATE TABLE IF NOT EXISTS ${ctx.resolve(output_table)} AS 
             SELECT * FROM ${ml_function} (
                 MODEL ${ctx.resolve(ml_model)},
                 (SELECT * FROM (${source_func(ctx)}) ${limit_clause}),
                 STRUCT (${ml_configs_string})
             ) WHERE ${accept_filter}`);
 
-    // Incrementally update the target table.
-    let table = publish(target_table, {
+    // Incrementally update the output table.
+    let table = publish(output_table, {
         type: "incremental",
-        dependencies: [`init_${target_table}`],
+        dependencies: [`init_${output_table}`],
         uniqueKey: unique_keys,
     });
 
-    // Repeatedly find new rows from the source table, performs the ML operation, and merges the result to the target table
+    // Repeatedly find new rows from the source table, performs the ML operation, and merges the result to the output table
     table.preOps((ctx) => `${ctx.when(ctx.incremental(), `
         REPEAT --;`)}`);
     table.query((ctx) => `
@@ -55,7 +55,7 @@ const table_ml = (target_table, unique_keys, ml_function, ml_model, source_query
             MODEL ${ctx.resolve(ml_model)},
             (SELECT S.* FROM (${source_func(ctx)}) AS S
                 ${ctx.when(ctx.incremental(), 
-                `WHERE NOT EXISTS (SELECT * FROM ${ctx.resolve(target_table)} AS T WHERE ${unique_keys.map((k) => `S.${k} = T.${k}`).join(' AND ')})`)} ${limit_clause}),
+                `WHERE NOT EXISTS (SELECT * FROM ${ctx.resolve(output_table)} AS T WHERE ${unique_keys.map((k) => `S.${k} = T.${k}`).join(' AND ')})`)} ${limit_clause}),
             STRUCT (${ml_configs_string})
         ) WHERE ${accept_filter}`);
     table.postOps((ctx) => `${ctx.when(ctx.incremental(), `
@@ -67,7 +67,7 @@ const table_ml = (target_table, unique_keys, ml_function, ml_model, source_query
  * Performs the ML.GENERATE_EMBEDDING function on the given source table.
  * 
  * @param {Resolvable} source_table represents the source table
- * @param {String} target_table the name of the table to store the final result
+ * @param {String} output_table the name of the table to store the final result
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {Resolvable} ml_model the remote model to use for the ML operation that uses one of the 
  *                     `textembedding-gecko*` Vertex AI LLMs as endpoint
@@ -79,11 +79,11 @@ const table_ml = (target_table, unique_keys, ml_function, ml_model, source_query
  * 
  * @see {@link https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-generate-embedding}
  */
-const generate_embedding = (source_table, target_table, unique_keys, ml_model, source_query, ml_configs, options) => {
+function generate_embedding(source_table, output_table, unique_keys, ml_model, source_query, ml_configs, options) {
     common.declare_resolvable(source_table);
     common.declare_resolvable(ml_model);
 
-    table_ml(target_table, unique_keys, "ML.GENERATE_EMBEDDING", ml_model, source_query,
+    table_ml(output_table, unique_keys, "ML.GENERATE_EMBEDDING", ml_model, source_query,
         common.retryable_error_filter("ml_generate_embedding_status"), ml_configs, options);
 };
 
@@ -91,7 +91,7 @@ const generate_embedding = (source_table, target_table, unique_keys, ml_model, s
  * Performs the ML.GENERATE_TEXT function on the given source table.
  * 
  * @param {Resolvable} source_table represents the source table
- * @param {String} target_table the name of the table to store the final result
+ * @param {String} output_table the name of the table to store the final result
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {Resolvable} ml_model the remote model to use for the ML operation that uses one 
  *                     of the Vertex AI LLM endpoints
@@ -103,11 +103,11 @@ const generate_embedding = (source_table, target_table, unique_keys, ml_model, s
  * 
  * @see {@link https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-generate-text}
  */
-const generate_text = (source_table, target_table, unique_keys, ml_model, source_query, ml_configs, options) => {
+function generate_text(source_table, output_table, unique_keys, ml_model, source_query, ml_configs, options) {
     common.declare_resolvable(source_table);
     common.declare_resolvable(ml_model);
 
-    table_ml(target_table, unique_keys, "ML.GENERATE_TEXT", ml_model, source_query,
+    table_ml(output_table, unique_keys, "ML.GENERATE_TEXT", ml_model, source_query,
         common.retryable_error_filter("ml_generate_text_status"), ml_configs, options);
 }
 
@@ -115,7 +115,7 @@ const generate_text = (source_table, target_table, unique_keys, ml_model, source
  * Performs the ML.UNDERSTAND_TEXT function on the given source table.
  * 
  * @param {Resolvable} source_table represents the source table
- * @param {String} target_table the name of the table to store the final result
+ * @param {String} output_table the name of the table to store the final result
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {Resolvable} ml_model the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_NATURAL_LANGUAGE_V1
  * @param {String | Function} source_query either a query string or a Contextable function to produce the 
@@ -126,11 +126,11 @@ const generate_text = (source_table, target_table, unique_keys, ml_model, source
  * 
  * @see {@link https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-understand-text}
  */
-const understand_text = (source_table, target_table, unique_keys, ml_model, source_query, ml_configs, options) => {
+function understand_text(source_table, output_table, unique_keys, ml_model, source_query, ml_configs, options) {
     common.declare_resolvable(source_table);
     common.declare_resolvable(ml_model);
 
-    table_ml(target_table, unique_keys, "ML.UNDERSTAND_TEXT", ml_model, source_query,
+    table_ml(output_table, unique_keys, "ML.UNDERSTAND_TEXT", ml_model, source_query,
         common.retryable_error_filter("ml_understand_text_status"), ml_configs, options);
 }
 
@@ -138,7 +138,7 @@ const understand_text = (source_table, target_table, unique_keys, ml_model, sour
  * Performs the ML.TRANSLATE function on the given source table.
  * 
  * @param {Resolvable} source_table represents the source table
- * @param {String} target_table the name of the table to store the final result
+ * @param {String} output_table the name of the table to store the final result
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {Resolvable} ml_model the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_TRANSLATE_V3
  * @param {String | Function} source_query either a query string or a Contextable function to produce the 
@@ -149,11 +149,11 @@ const understand_text = (source_table, target_table, unique_keys, ml_model, sour
  * 
  * @see {@link https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-translate}
  */
-const translate = (source_table, target_table, unique_keys, ml_model, source_query, ml_configs, options) => {
+function translate(source_table, output_table, unique_keys, ml_model, source_query, ml_configs, options) {
     common.declare_resolvable(source_table);
     common.declare_resolvable(ml_model);
 
-    table_ml(target_table, unique_keys, "ML.TRANSLATE", ml_model, source_query,
+    table_ml(output_table, unique_keys, "ML.TRANSLATE", ml_model, source_query,
         common.retryable_error_filter("ml_translate_status"), ml_configs, options);
 }
 
