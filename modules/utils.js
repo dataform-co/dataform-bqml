@@ -1,6 +1,6 @@
 module.exports = {
     /**
-     * Declares the given source as a resolvable Dataform data source. 
+     * Declares the resolvable as a Dataform data source.
      */
     declare_resolvable: (source) => {
         if (source.constructor === Object) {
@@ -20,3 +20,4 @@ module.exports = {
         return `${status_col} NOT LIKE 'A retryable error occurred:%'`;
     },
 };
+
