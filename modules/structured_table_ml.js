@@ -54,8 +54,8 @@ function table_ml(output_table, unique_keys, ml_function, ml_model, source_query
         SELECT * FROM ${ml_function} (
             MODEL ${ctx.resolve(ml_model)},
             (SELECT S.* FROM (${source_func(ctx)}) AS S
-                ${ctx.when(ctx.incremental(), 
-                `WHERE NOT EXISTS (SELECT * FROM ${ctx.resolve(output_table)} AS T WHERE ${unique_keys.map((k) => `S.${k} = T.${k}`).join(' AND ')})`)} ${limit_clause}),
+                ${ctx.when(ctx.incremental(),
+        `WHERE NOT EXISTS (SELECT * FROM ${ctx.resolve(output_table)} AS T WHERE ${unique_keys.map((k) => `S.${k} = T.${k}`).join(' AND ')})`)} ${limit_clause}),
             STRUCT (${ml_configs_string})
         ) WHERE ${accept_filter}`);
     table.postOps((ctx) => `${ctx.when(ctx.incremental(), `
@@ -80,8 +80,7 @@ function table_ml(output_table, unique_keys, ml_function, ml_model, source_query
  * @see {@link https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-generate-embedding}
  */
 function generate_embedding(source_table, output_table, unique_keys, ml_model, source_query, ml_configs, options) {
-    common.declare_resolvable(source_table);
-    common.declare_resolvable(ml_model);
+    common.safe_declare_resolvable(source_table, ml_model);
 
     table_ml(output_table, unique_keys, "ML.GENERATE_EMBEDDING", ml_model, source_query,
         common.retryable_error_filter("ml_generate_embedding_status"), ml_configs, options);
@@ -104,8 +103,7 @@ function generate_embedding(source_table, output_table, unique_keys, ml_model, s
  * @see {@link https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-generate-text}
  */
 function generate_text(source_table, output_table, unique_keys, ml_model, source_query, ml_configs, options) {
-    common.declare_resolvable(source_table);
-    common.declare_resolvable(ml_model);
+    common.safe_declare_resolvable(source_table, ml_model);
 
     table_ml(output_table, unique_keys, "ML.GENERATE_TEXT", ml_model, source_query,
         common.retryable_error_filter("ml_generate_text_status"), ml_configs, options);
@@ -127,8 +125,7 @@ function generate_text(source_table, output_table, unique_keys, ml_model, source
  * @see {@link https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-understand-text}
  */
 function understand_text(source_table, output_table, unique_keys, ml_model, source_query, ml_configs, options) {
-    common.declare_resolvable(source_table);
-    common.declare_resolvable(ml_model);
+    common.safe_declare_resolvable(source_table, ml_model);
 
     table_ml(output_table, unique_keys, "ML.UNDERSTAND_TEXT", ml_model, source_query,
         common.retryable_error_filter("ml_understand_text_status"), ml_configs, options);
@@ -150,8 +147,7 @@ function understand_text(source_table, output_table, unique_keys, ml_model, sour
  * @see {@link https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-translate}
  */
 function translate(source_table, output_table, unique_keys, ml_model, source_query, ml_configs, options) {
-    common.declare_resolvable(source_table);
-    common.declare_resolvable(ml_model);
+    common.safe_declare_resolvable(source_table, ml_model);
 
     table_ml(output_table, unique_keys, "ML.TRANSLATE", ml_model, source_query,
         common.retryable_error_filter("ml_translate_status"), ml_configs, options);
