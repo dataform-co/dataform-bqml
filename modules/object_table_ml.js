@@ -1,4 +1,4 @@
-const common = require("./utils.js");
+const common = require("./utils");
 
 /**
  * A generic object table ML pipeline. 
@@ -47,7 +47,7 @@ function obj_table_ml(source_table, source, output_table, accept_filter, {
         DECLARE candidates ARRAY<STRING>;
         REPEAT
             SET candidates = ARRAY(
-                SELECT ${unique_key} FROM ${ctx.resolve(source_table)} AS S 
+                SELECT ${unique_key} FROM ${ctx.ref(source_table)} AS S 
                 WHERE NOT EXISTS (SELECT * FROM ${ctx.resolve(output_table)} AS T WHERE S.${unique_key} = T.${unique_key})
                     OR ${updated_column} > (SELECT max(${updated_column}) FROM ${ctx.resolve(output_table)}) ${limit_clause})`,
         ``)}`);
@@ -60,7 +60,7 @@ function obj_table_ml(source_table, source, output_table, accept_filter, {
     table.postOps((ctx) => `${ctx.when(ctx.incremental(), `
             UNTIL (SELECT @@row_count) = 0 OR TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), @@script.creation_time, SECOND) >= ${batch_duration_secs} 
         END REPEAT`)}`);
-};
+}
 
 /**
  * Performs the ML.ANNOTATE_IMAGE function on the given source table.
@@ -75,14 +75,13 @@ function obj_table_ml(source_table, source, output_table, accept_filter, {
  */
 function annotate_image(source_table, output_table, model, features, options) {
     let feature_names = features.map((f) => `'${f}'`).join(", ");
-    common.declare_resolvable(source_table);
-    common.declare_resolvable(model);
+
     obj_table_ml(source_table, (ctx) => `SELECT * FROM ML.ANNOTATE_IMAGE(
-        MODEL ${ctx.resolve(model)},
-        TABLE ${ctx.resolve(source_table)},
+        MODEL ${ctx.ref(model)},
+        TABLE ${ctx.ref(source_table)},
         STRUCT([${feature_names}] AS vision_features))`,
         output_table, common.retryable_error_filter("ml_annotate_image_status"), options);
-};
+}
 
 /**
  * Performs the ML.TRANSCRIBE function on the given source table.
@@ -98,14 +97,13 @@ function annotate_image(source_table, output_table, model, features, options) {
  */
 function transcribe(source_table, output_table, model, recognition_config, options) {
     let config = JSON.stringify(recognition_config);
-    common.declare_resolvable(source_table);
-    common.declare_resolvable(model);
+
     obj_table_ml(source_table, (ctx) => `SELECT * FROM ML.TRANSCRIBE(
-        MODEL ${ctx.resolve(model)},
-        TABLE ${ctx.resolve(source_table)},
+        MODEL ${ctx.ref(model)},
+        TABLE ${ctx.ref(source_table)},
         recognition_config => ( JSON '${config}'))`,
         output_table, common.retryable_error_filter("ml_transcribe_status"), options);
-};
+}
 
 /**
  * Performs the ML.PROCESS_DOCUMENT function on the given source table.
@@ -118,13 +116,11 @@ function transcribe(source_table, output_table, model, recognition_config, optio
  * @see {@link https://cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-process-document
  */
 function process_document(source_table, output_table, model, options) {
-    common.declare_resolvable(source_table);
-    common.declare_resolvable(model);
     obj_table_ml(source_table, (ctx) => `SELECT * FROM ML.PROCESS_DOCUMENT(
-        MODEL ${ctx.resolve(model)},
-        TABLE ${ctx.resolve(source_table)})`,
+        MODEL ${ctx.ref(model)},
+        TABLE ${ctx.ref(source_table)})`,
         output_table, common.retryable_error_filter("ml_process_document_status"), options);
-};
+}
 
 /**
  * Performs the ML.GENERATE_TEXT function on visual content in the given source table.
@@ -143,11 +139,9 @@ function vision_generate_text(source_table, output_table, model, prompt, llm_con
         prompt: prompt,
         ...llm_config
     };
-    common.declare_resolvable(source_table);
-    common.declare_resolvable(model);
     obj_table_ml(source_table, (ctx) => `SELECT * FROM ML.GENERATE_TEXT(
-        MODEL ${ctx.resolve(model)},
-        TABLE ${ctx.resolve(source_table)},
+        MODEL ${ctx.ref(model)},
+        TABLE ${ctx.ref(source_table)},
         STRUCT(
             ${Object.entries(config).map(([k, v]) => `${JSON.stringify(v)} AS ${k}`).join(",")}
         ))`,

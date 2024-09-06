@@ -9,8 +9,16 @@ transient failures by automatic reprocessing and incrementally updating the outp
 
 ## Quick Start Guide
 ### Installation
-Add the bqml package to your package.json file in your Dataform project. 
-You can find the most up to date package version on the releases page.
+Add the bqml package to your package.json file in your Dataform project.
+
+```javascript
+{
+  "dependencies": {
+    "bqml": "https://github.com/dataform-co/dataform-bqml/archive/[RELEASE_VERSION].tar.gz"
+  }
+}
+```
+You can find the most up to date package version on the [releases](https://github.com/dataform-co/dataform-bqml/releases) page.
 
 ### Usage
 The following example shows how to generate text from images using the
@@ -27,6 +35,11 @@ let source_table = "product_image";
 // Name of the table for storing the result
 let output_table = "product_image_description";
 
+// Optionally declare the model and source table as dataform datasources 
+// if it is not defined in other actions.
+declare({name: model});
+declare({name: source_table});
+
 // Execute the pipeline
 bqml.vision_generate_text(
     source_table, output_table, model, 
@@ -41,7 +54,7 @@ bqml.vision_generate_text(
 #### Signature
 ```javascript
 function generate_text(
-    source_table, output_table, unique_keys,
+    output_table, unique_keys,
     ml_model, source_query, ml_configs, options)
 ```
 #### Description
@@ -51,7 +64,6 @@ Performs the ML.GENERATE_TEXT function on the given source table.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| source_table | <code>Resolvable</code> | represents the source table |
 | output_table | <code>String</code> | the name of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model to use for the ML operation that uses one of the Vertex AI LLM endpoints |
@@ -85,8 +97,8 @@ Performs the ML.GENERATE_TEXT function on visual content in the given source tab
 #### Signature
 ```javascript
 function generate_embedding(
-    source_table, output_table, unique_keys,
-    ml_model, source_query, ml_configs, options = {})
+    output_table, unique_keys,
+    ml_model, source_query, ml_configs, options)
 ```
 #### Description
 Performs the ML.GENERATE_EMBEDDING function on the given source table.
@@ -95,7 +107,6 @@ Performs the ML.GENERATE_EMBEDDING function on the given source table.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| source_table | <code>Resolvable</code> | represents the source table |
 | output_table | <code>String</code> | the name of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model to use for the ML operation that uses one of the `textembedding-gecko*` Vertex AI LLMs as endpoint |
@@ -108,7 +119,7 @@ Performs the ML.GENERATE_EMBEDDING function on the given source table.
 #### Signature
 ```javascript
 function understand_text(
-    source_table, output_table, unique_keys,
+    output_table, unique_keys,
     ml_model, source_query, ml_configs, options)
 ```
 #### Description
@@ -118,7 +129,6 @@ Performs the ML.UNDERSTAND_TEXT function on the given source table.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| source_table | <code>Resolvable</code> | represents the source table |
 | output_table | <code>String</code> | the name of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_NATURAL_LANGUAGE_V1 |
@@ -131,7 +141,7 @@ Performs the ML.UNDERSTAND_TEXT function on the given source table.
 #### Signature
 ```javascript
 function translate(
-    source_table, output_table, unique_keys,
+    output_table, unique_keys,
     ml_model, source_query, ml_configs, options)
 ```
 #### Description
@@ -141,7 +151,6 @@ Performs the ML.TRANSLATE function on the given source table.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| source_table | <code>Resolvable</code> | represents the source table |
 | output_table | <code>String</code> | the name of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_TRANSLATE_V3 |
