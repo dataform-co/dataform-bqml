@@ -48,6 +48,35 @@ bqml.vision_generate_text(
     }
 );
 ```
+This is another example showing how to generate text using a source query
+to form the prompt.
+
+```javascript
+// Import the module
+const bqml = require("bqml");
+
+// Name of the model
+let model = "llm";
+// Name of the table that forms the source query
+let source_table = "product_comment";
+// Name of the table for storing the result
+let output_table = "sentiment";
+// Columns to uniquely identify a row in the source table
+let keys = ["comment_id"];
+
+// Optionally declare the model and source table as dataform datasources 
+// if it is not defined in other actions.
+declare({name: model});
+declare({name: source_table});
+
+// Execute the pipeline
+bqml.generate_text(
+    output_table,
+    keys,
+    model,
+    (ctx) => `SELECT *, "Classify the text into neutral, negative, or positive. Text: " || comment AS prompt FROM ${ctx.ref(source_table)}`,
+    {flatten_json_output: true});
+```
 
 ## Function Reference
 ### Function generate_text
