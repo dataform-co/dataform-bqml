@@ -6,7 +6,7 @@ const common = require("./utils");
  * and merges to the output table until all rows are processed or runs longer
  * than the specific duration.
  *
- * @param {String} output_table name of the output table
+ * @param {String | Resolvable} output_table either a name or Resolvable of the output table
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {String} ml_function the name of the BQML function to call
  * @param {Resolvable} ml_model the remote model to use for the ML operation
@@ -25,6 +25,7 @@ function table_ml(output_table, unique_keys, ml_function, ml_model, source_query
     batch_size = 10000,
     batch_duration_secs = 22 * 60 * 60,
 } = {}) {
+    const output_table_resolvable = common.to_resolvable(output_table);
     let source_func = (source_query instanceof Function) ? source_query : () => source_query;
     let limit_clause = `LIMIT ${batch_size}`;
     let ml_configs_string = Object.entries(ml_configs).map(([k, v]) => `${JSON.stringify(v)} AS ${k}`).join(',');
@@ -32,8 +33,11 @@ function table_ml(output_table, unique_keys, ml_function, ml_model, source_query
     unique_keys = (unique_keys instanceof Array ? unique_keys : [unique_keys]);
 
     // Initialize by creating the output table.
-    operate(`init_${output_table}`)
-        .queries((ctx) => `CREATE TABLE IF NOT EXISTS ${ctx.resolve(output_table)} AS 
+    const init_table = common.resolvable(`init_${output_table_resolvable.name}`, output_table_resolvable);
+    operate(init_table.name)
+        .schema(init_table.schema)
+        .database(init_table.database)
+        .queries((ctx) => `CREATE TABLE IF NOT EXISTS ${ctx.resolve(output_table_resolvable)} AS 
             SELECT * FROM ${ml_function} (
                 MODEL ${ctx.ref(ml_model)},
                 (SELECT * FROM (${source_func(ctx)}) ${limit_clause}),
@@ -41,9 +45,11 @@ function table_ml(output_table, unique_keys, ml_function, ml_model, source_query
             ) WHERE ${accept_filter}`);
 
     // Incrementally update the output table.
-    let table = publish(output_table, {
+    let table = publish(output_table_resolvable.name, {
         type: "incremental",
-        dependencies: [`init_${output_table}`],
+        database: output_table_resolvable.database,
+        schema: output_table_resolvable.schema,
+        dependencies: [init_table],
         uniqueKey: unique_keys,
     });
 
@@ -54,8 +60,8 @@ function table_ml(output_table, unique_keys, ml_function, ml_model, source_query
         SELECT * FROM ${ml_function} (
             MODEL ${ctx.ref(ml_model)},
             (SELECT S.* FROM (${source_func(ctx)}) AS S
-                ${ctx.when(ctx.incremental(), 
-                `WHERE NOT EXISTS (SELECT * FROM ${ctx.resolve(output_table)} AS T WHERE ${unique_keys.map((k) => `S.${k} = T.${k}`).join(' AND ')})`)} ${limit_clause}),
+                ${ctx.when(ctx.incremental(),
+        `WHERE NOT EXISTS (SELECT * FROM ${ctx.resolve(output_table_resolvable)} AS T WHERE ${unique_keys.map((k) => `S.${k} = T.${k}`).join(' AND ')})`)} ${limit_clause}),
             STRUCT (${ml_configs_string})
         ) WHERE ${accept_filter}`);
     table.postOps((ctx) => `${ctx.when(ctx.incremental(), `
@@ -66,7 +72,7 @@ function table_ml(output_table, unique_keys, ml_function, ml_model, source_query
 /**
  * Performs the ML.GENERATE_EMBEDDING function on the given source table.
  *
- * @param {String} output_table the name of the table to store the final result
+ * @param {String | Resolvable} output_table either a name or Resolvable of the table to store the final result
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {Resolvable} ml_model the remote model to use for the ML operation that uses one of the
  *                     `textembedding-gecko*` Vertex AI LLMs as endpoint
@@ -86,7 +92,7 @@ function generate_embedding(output_table, unique_keys, ml_model, source_query, m
 /**
  * Performs the ML.GENERATE_TEXT function on the given source table.
  *
- * @param {String} output_table the name of the table to store the final result
+ * @param {String | Resolvable} output_table either a name or Resolvable of the table to store the final result
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {Resolvable} ml_model the remote model to use for the ML operation that uses one
  *                     of the Vertex AI LLM endpoints
@@ -106,7 +112,7 @@ function generate_text(output_table, unique_keys, ml_model, source_query, ml_con
 /**
  * Performs the ML.UNDERSTAND_TEXT function on the given source table.
  *
- * @param {String} output_table the name of the table to store the final result
+* @param {String | Resolvable} output_table either a name or Resolvable of the table to store the final result
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {Resolvable} ml_model the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_NATURAL_LANGUAGE_V1
  * @param {String | Function} source_query either a query string or a Contextable function to produce the
@@ -125,7 +131,7 @@ function understand_text(output_table, unique_keys, ml_model, source_query, ml_c
 /**
  * Performs the ML.TRANSLATE function on the given source table.
  *
- * @param {String} output_table the name of the table to store the final result
+* @param {String | Resolvable} output_table either a name or Resolvable of the table to store the final result
  * @param {String | Array} unique_keys column name(s) for identifying an unique row in the source table
  * @param {Resolvable} ml_model the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_TRANSLATE_V3
  * @param {String | Function} source_query either a query string or a Contextable function to produce the

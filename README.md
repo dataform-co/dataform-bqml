@@ -93,7 +93,7 @@ Performs the ML.GENERATE_TEXT function on the given source table.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| output_table | <code>String</code> | the name of the table to store the final result |
+| output_table | <code>String</code> \| <code>Resolvable</code> | either a name or Resolvable of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model to use for the ML operation that uses one of the Vertex AI LLM endpoints |
 | source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation and it must have the unique key columns selected in addition to other fields |
@@ -115,7 +115,7 @@ Performs the ML.GENERATE_TEXT function on visual content in the given source tab
 | Param | Type | Description |
 | --- | --- | --- |
 | source_table | <code>Resolvable</code> | represents the source object table |
-| output_table | <code>String</code> | name of the output table |
+| output_table | <code>String</code> \| <code>Resolvable</code> | either a name or Resolvable of the output table |
 | model | <code>Resolvable</code> | name the remote model with the `gemini-pro-vision` endpoint |
 | prompt | <code>String</code> | the prompt text for the LLM |
 | llm_config | <code>Object</code> | extra configurations to the LLM |
@@ -136,7 +136,7 @@ Performs the ML.GENERATE_EMBEDDING function on the given source table.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| output_table | <code>String</code> | the name of the table to store the final result |
+| output_table | <code>String</code> \| <code>Resolvable</code> | either a name or Resolvable of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model to use for the ML operation that uses one of the `textembedding-gecko*` Vertex AI LLMs as endpoint |
 | source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation and it must have the unique key columns selected in addition to other fields |
@@ -158,7 +158,7 @@ Performs the ML.UNDERSTAND_TEXT function on the given source table.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| output_table | <code>String</code> | the name of the table to store the final result |
+| output_table | <code>String</code> \| <code>Resolvable</code> | either a name or Resolvable of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_NATURAL_LANGUAGE_V1 |
 | source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation and it must have the unique key columns selected in addition to other fields |
@@ -180,7 +180,7 @@ Performs the ML.TRANSLATE function on the given source table.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| output_table | <code>String</code> | the name of the table to store the final result |
+| output_table | <code>String</code> \| <code>Resolvable</code> | either a name or Resolvable of the table to store the final result |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_model | <code>Resolvable</code> | the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_TRANSLATE_V3 |
 | source_query | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data for the ML operation and it must have the unique key columns selected in addition to other fields |
@@ -202,7 +202,7 @@ Performs the ML.ANNOTATE_IMAGE function on the given source table.
 | Param | Type | Description |
 | --- | --- | --- |
 | source_table | <code>Resolvable</code> | represents the source object table |
-| output_table | <code>String</code> | name of the output table |
+| output_table | <code>String</code> \| <code>Resolvable</code> | either a name or Resolvable of the output table |
 | model | <code>Resolvable</code> | the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_VISION_V1 |
 | features | <code>Array</code> | specifies one or more feature names of supported Vision API features |
 | options | <code>Object</code> | the configuration object for the [obj_table_ml](#obj_table_ml) function |
@@ -222,7 +222,7 @@ Performs the ML.TRANSCRIBE function on the given source table.
 | Param | Type | Description |
 | --- | --- | --- |
 | source_table | <code>Resolvable</code> | represents the source object table |
-| output_table | <code>String</code> | name of the output table |
+| output_table | <code>String</code> \| <code>Resolvable</code> | either a name or Resolvable of the output table |
 | model | <code>Resolvable</code> | the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_SPEECH_TO_TEXT_V2 |
 | recognition_config | <code>Object</code> | the recognition configuration to override the default configuration of the specified recognizer |
 | options | <code>Object</code> | the configuration object for the [obj_table_ml](#obj_table_ml) function |
@@ -241,8 +241,8 @@ Performs the ML.PROCESS_DOCUMENT function on the given source table.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| source_table | <code>Resolvable</code> | represents the source object table |
-| output_table | <code>String</code> | name of the output table |
+| source_table | <code>Resolvable</code> | either a name or Resolvable of the output table |
+| output_table | <code>String</code> \| <code>Resolvable</code> | the output table to store final result |
 | model | <code>Resolvable</code> | the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_DOCUMENT_V1 |
 | options | <code>Object</code> | the configuration object for the [obj_table_ml](#obj_table_ml) function |
 
@@ -266,7 +266,7 @@ than the specific duration.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| output_table | <code>String</code> | name of the output table |
+| output_table | <code>String</code> \| <code>Resolvable</code> | either a name or Resolvable of the output table |
 | unique_keys | <code>String</code> \| <code>Array</code> | column name(s) for identifying an unique row in the source table |
 | ml_function | <code>String</code> | the name of the BQML function to call |
 | ml_model | <code>Resolvable</code> | the remote model to use for the ML operation |
@@ -302,7 +302,7 @@ column is newer than the largest value in the output table.
 | --- | --- | --- |
 | source_table | <code>Resolvable</code> | represents the source object table |
 | source | <code>String</code> \| <code>function</code> | either a query string or a Contextable function to produce the query on the source data |
-| output_table | <code>String</code> | the name of the table to store the final result |
+| output_table | <code>String</code> \| <code>Resolvable</code> | either a name or Resolvable of the table to store the final result |
 | accept_filter | <code>String</code> | a SQL expression for finding rows that contains retryable error |
 | batch_size | <code>Number</code> | number of rows to process in each SQL job. Rows in the object table will be processed in batches according to the batch size. Default batch size is 500 |
 | unique_key | <code>String</code> | the primary key in the output table for incremental update. Default value is "uri". |

@@ -11,7 +11,7 @@ const common = require("./utils");
  * 
  * @param {Resolvable} source_table represents the source object table
  * @param {String | Function} source either a query string or a Contextable function to produce the query on the source data
- * @param {String} output_table the name of the table to store the final result
+ * @param {String | Resolvable} output_table either a name or Resolvable of the table to store the final result
  * @param {String} accept_filter a SQL expression for finding rows that contains retryable error
  * @param {Number} batch_size number of rows to process in each SQL job. Rows in the object table will be 
  *                 processed in batches according to the batch size. Default batch size is 500
@@ -30,15 +30,22 @@ function obj_table_ml(source_table, source, output_table, accept_filter, {
     let source_func = (source instanceof Function) ? source : () => source;
     let limit_clause = `LIMIT ${batch_size}`;
 
+    const output_table_resolvable = common.to_resolvable(output_table);
+    const init_table = common.resolvable(`init_${output_table_resolvable.name}`, output_table_resolvable);
+
     // Initialize by creating the output table with a small limit to avoid timeout
-    operate(`init_${output_table}`)
+    operate(init_table.name)
+        .schema(init_table.schema)
+        .database(init_table.database)
         .queries((ctx) =>
-            `CREATE TABLE IF NOT EXISTS ${ctx.resolve(output_table)} AS ${source_func(ctx)} WHERE ${accept_filter} LIMIT 10`);
+            `CREATE TABLE IF NOT EXISTS ${ctx.resolve(output_table_resolvable)} AS ${source_func(ctx)} WHERE ${accept_filter} LIMIT 10`);
 
     // Incrementally update the output table.
-    let table = publish(output_table, {
+    let table = publish(output_table_resolvable.name, {
         type: "incremental",
-        dependencies: [`init_${output_table}`],
+        database: output_table_resolvable.database,
+        schema: output_table_resolvable.schema,
+        dependencies: [init_table],
         uniqueKey: [unique_key]
     });
 
@@ -48,8 +55,8 @@ function obj_table_ml(source_table, source, output_table, accept_filter, {
         REPEAT
             SET candidates = ARRAY(
                 SELECT ${unique_key} FROM ${ctx.ref(source_table)} AS S 
-                WHERE NOT EXISTS (SELECT * FROM ${ctx.resolve(output_table)} AS T WHERE S.${unique_key} = T.${unique_key})
-                    OR ${updated_column} > (SELECT max(${updated_column}) FROM ${ctx.resolve(output_table)}) ${limit_clause})`,
+                WHERE NOT EXISTS (SELECT * FROM ${ctx.resolve(output_table_resolvable)} AS T WHERE S.${unique_key} = T.${unique_key})
+                    OR ${updated_column} > (SELECT max(${updated_column}) FROM ${ctx.resolve(output_table_resolvable)}) ${limit_clause})`,
         ``)}`);
     table.query((ctx) => `
         ${source_func(ctx)} WHERE ${ctx.when(ctx.incremental(), 
@@ -66,7 +73,7 @@ function obj_table_ml(source_table, source, output_table, accept_filter, {
  * Performs the ML.ANNOTATE_IMAGE function on the given source table.
  * 
  * @param {Resolvable} source_table represents the source object table
- * @param {String} output_table name of the output table
+ * @param {String | Resolvable} output_table either a name or Resolvable of the output table
  * @param {Resolvable} model the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_VISION_V1
  * @param {Array} features specifies one or more feature names of supported Vision API features
  * @param {Object} options the configuration object for the {@link obj_table_ml} function
@@ -87,7 +94,7 @@ function annotate_image(source_table, output_table, model, features, options) {
  * Performs the ML.TRANSCRIBE function on the given source table.
  * 
  * @param {Resolvable} source_table represents the source object table
- * @param {String} output_table name of the output table
+ * @param {String | Resolvable} output_table either a name or Resolvable of the output table
  * @param {Resolvable} model the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_SPEECH_TO_TEXT_V2
  * @param {Object} recognition_config the recognition configuration to override the default configuration 
  *                 of the specified recognizer
@@ -109,7 +116,7 @@ function transcribe(source_table, output_table, model, recognition_config, optio
  * Performs the ML.PROCESS_DOCUMENT function on the given source table.
  * 
  * @param {Resolvable} source_table represents the source object table
- * @param {String} output_table name of the output table
+ * @param {String | Resolvable} output_table either a name or Resolvable of the output table
  * @param {Resolvable} model the remote model with a REMOTE_SERVICE_TYPE of CLOUD_AI_DOCUMENT_V1
  * @param {Object} options the configuration object for the {@link obj_table_ml} function
  * 
@@ -126,7 +133,7 @@ function process_document(source_table, output_table, model, options) {
  * Performs the ML.GENERATE_TEXT function on visual content in the given source table.
  * 
  * @param {Resolvable} source_table represents the source object table
- * @param {String} output_table name of the output table
+ * @param {String | Resolvable} output_table either a name or Resolvable of the output table
  * @param {Resolvable} model name the remote model with the `gemini-pro-vision` endpoint
  * @param {String} prompt the prompt text for the LLM
  * @param {Object} llm_config extra configurations to the LLM
